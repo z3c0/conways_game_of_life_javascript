@@ -26,7 +26,7 @@ function createQueueProxy() {
                     let nextItem = getQueueItem();
                     processItem(nextItem);
                 }
-            }, 100);
+            });
 
             __QUEUED_TIMEOUT_IDS[timeoutIndex] = timeoutId;
     
