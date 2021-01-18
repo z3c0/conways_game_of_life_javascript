@@ -22,8 +22,10 @@ function createQueueProxy() {
     
             let timeoutId = setTimeout(() => {
                 __QUEUED_TIMEOUT_IDS.splice(timeoutIndex, 1);
-                let nextItem = getQueueItem();
-                processItem(nextItem);
+                if (__QUEUE.length > 0) {
+                    let nextItem = getQueueItem();
+                    processItem(nextItem);
+                }
             }, 100);
 
             __QUEUED_TIMEOUT_IDS[timeoutIndex] = timeoutId;
@@ -38,6 +40,9 @@ function processItem(item) {
         case 0: // next
 
             // process a single turn
+            // stop playing if playing
+            resetQueue();
+
             let currentState = item.currentState;
             __SUBWORKER.postMessage(currentState);
             break;
@@ -52,13 +57,9 @@ function processItem(item) {
             break;
         case 2: // stop
 
-            // stop interval and clear any queued actions
+            // stop interval, clear any queue actions, and reset variables
             if (__INTERVAL_ID) {
-                clearInterval(__INTERVAL_ID);
-                __INTERVAL_ID = null;
-
-                while (__QUEUE.length > 0) getQueueItem(); // empty queue
-                for (let timeoutId of __QUEUED_TIMEOUT_IDS) clearTimeout(timeoutId); // clear queued timeouts
+                resetQueue();
             }
             break;
         case 3: // continue
@@ -75,6 +76,17 @@ function getQueueItem() {
 
 function addQueueItem(value) {
     queueProxy.push(value)
+}
+
+function resetQueue() {
+    clearInterval(__INTERVAL_ID); // stop interval
+    for (let timeoutId of __QUEUED_TIMEOUT_IDS) clearTimeout(timeoutId); // clear queued timeouts
+
+    while (__QUEUE.length > 0) getQueueItem(); // clear queue
+
+    __CURRENT_STATE = [];
+    __INTERVAL_ID = null;
+    __QUEUED_TIMEOUT_IDS = [];
 }
 
 onmessage = function(event) {
