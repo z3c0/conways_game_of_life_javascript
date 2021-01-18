@@ -1,0 +1,74 @@
+<!DOCTYPE html5>
+<head>
+    <meta charset="UTF-8">
+    <style type="text/css">
+        body {
+            height: 100%;
+            margin: 0px;
+            background-color: black;
+        }
+
+        #life-interface {
+            height: 100%;
+        }
+
+        #life-header {
+            height: 20%;
+        }
+
+        #life-statistics {
+            display: inline-block;
+            width: 50%;
+        }
+
+        #life-controls {
+            display: inline-block;
+            width: 50%;
+        }
+
+        #life-grid {
+            height: 80%;
+            display: block;
+            border-collapse: collapse;
+        }
+
+        #life-grid > tbody {
+            display: table;
+        }
+
+        #life-grid > tbody > tr {
+            padding: 0px;
+        }
+
+        #life-grid > tbody > tr > td {
+            padding: 0px;
+            display: inline-block;
+            border-right: 1px solid white;
+            border-bottom: 1px solid white;
+        }
+
+        #life-grid > tbody > tr:nth-child(1) > td {
+            border-top: 1px solid white;
+        }
+
+        #life-grid > tbody > tr > td:nth-child(1) {
+            border-left: 1px solid white;
+        }
+
+        .alive {
+            background-color: white;
+        }
+
+        .dead {
+            background-color: black;
+        }
+
+        .empty {
+            background-color: black;
+        }
+    </style>
+</head>
+<body>
+    <script src="life.js"></script>
+    <script>main();</script>
+</body>
