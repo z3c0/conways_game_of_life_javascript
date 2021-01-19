@@ -144,7 +144,7 @@ class LifeInterface {
     }
 
     drawGrid() {
-        this.grid.style.width = this.element.getBoundingClientRect().width + 'px';
+        // this.grid.style.width = this.element.getBoundingClientRect().width + 'px';
 
         let leftMargin = Math.floor((this.grid.offsetWidth - Math.floor((this.grid.offsetWidth - 1) / this.GRID_SIZE) * this.GRID_SIZE) / 2);
         let gridWidth = this.grid.offsetWidth - leftMargin;
