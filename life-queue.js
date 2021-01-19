@@ -1,14 +1,16 @@
 'use strict';
 
-
+var __INTERVAL_ID = null;
 var __QUEUE = [];
 var __CURRENT_STATE = [];
-var __INTERVAL_ID = null;
 var __QUEUED_TIMEOUT_IDS = [];
+var __STOPPING = false;
 var __SUBWORKER = new Worker('life-core.js');
 __SUBWORKER.addEventListener('message', (event) => {
-    __CURRENT_STATE = event.data; // store results of processing
-    postMessage({nextState: __CURRENT_STATE}); // sync results with interface
+    if (!__STOPPING) {
+        __CURRENT_STATE = event.data; // store results of processing
+        postMessage({nextState: __CURRENT_STATE}); // sync results with interface
+    }
 });
 
 var queueProxy = createQueueProxy();
@@ -18,17 +20,19 @@ function createQueueProxy() {
         set: (target, property, value, receiver) => {
             target[property] = value;
 
-            let timeoutIndex = __QUEUED_TIMEOUT_IDS.length;
-    
-            let timeoutId = setTimeout(() => {
-                __QUEUED_TIMEOUT_IDS.splice(timeoutIndex, 1);
-                if (__QUEUE.length > 0) {
-                    let nextItem = getQueueItem();
-                    processItem(nextItem);
-                }
-            });
+            // triggers when an item is added to the queue
 
-            __QUEUED_TIMEOUT_IDS[timeoutIndex] = timeoutId;
+            if (__STOPPING) __STOPPING = false;
+
+            // wake event loop
+            if (!__INTERVAL_ID) {
+                __INTERVAL_ID = setInterval(() => {
+                    if (__QUEUE.length > 0) {
+                        let nextItem = getQueueItem();
+                        processItem(nextItem);
+                    }
+                }, 100);
+            }
     
             return true;
         }
@@ -40,33 +44,29 @@ function processItem(item) {
         case 0: // next
 
             // process a single turn
-            // stop playing if playing
+            __CURRENT_STATE = item.currentState;
+            __SUBWORKER.postMessage(__CURRENT_STATE);
             resetQueue();
-
-            let currentState = item.currentState;
-            __SUBWORKER.postMessage(currentState);
             break;
         case 1: // play
-
-            // create an interval to process a turn every 100 ms
-            if (!__INTERVAL_ID) {
-                let currentState = item.currentState;
-                __SUBWORKER.postMessage(currentState);
-                __INTERVAL_ID = setInterval(() => addQueueItem({eventType: 3}), 100);
-            }
+            __SUBWORKER.postMessage(item.currentState);
+            addQueueItem({eventType: 3, currentState: item.currentState});
             break;
         case 2: // stop
+            // set stopping flag to halt any further messages to the interface
+            __STOPPING = true;
 
-            // stop interval, clear any queue actions, and reset variables
-            if (__INTERVAL_ID) {
-                resetQueue();
-            }
+            // clear queue of any future actions
+            resetQueue();
             break;
-        case 3: // continue
-
-            // process turn queued by interval
-            __SUBWORKER.postMessage(__CURRENT_STATE);
-            break;
+        case 3:
+            let timeoutIndex = __QUEUED_TIMEOUT_IDS.length;
+            let timeoutId = setTimeout(() => {
+                __QUEUED_TIMEOUT_IDS.splice(timeoutIndex, 1);
+                __SUBWORKER.postMessage(__CURRENT_STATE);
+                addQueueItem({eventType: 3, currentState: item.currentState});
+            }, 100);
+            __QUEUED_TIMEOUT_IDS[timeoutIndex] = timeoutId;
     }
 }
 
@@ -79,14 +79,12 @@ function addQueueItem(value) {
 }
 
 function resetQueue() {
-    clearInterval(__INTERVAL_ID); // stop interval
-    for (let timeoutId of __QUEUED_TIMEOUT_IDS) clearTimeout(timeoutId); // clear queued timeouts
+    if (__INTERVAL_ID) clearInterval(__INTERVAL_ID);
+    while (__QUEUED_TIMEOUT_IDS.length > 0) clearTimeout(__QUEUED_TIMEOUT_IDS.shift());
+    while (__QUEUE.length > 0) getQueueItem();
 
-    while (__QUEUE.length > 0) getQueueItem(); // clear queue
-
-    __CURRENT_STATE = [];
     __INTERVAL_ID = null;
-    __QUEUED_TIMEOUT_IDS = [];
+    __CURRENT_STATE = [];
 }
 
 onmessage = function(event) {
