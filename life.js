@@ -78,11 +78,11 @@ class LifeInterface {
         let header = document.createElement('div');
         header.id = 'life-header';
 
-        // intialize statistics
+        // initialize statistics
         let statistics = document.createElement('div');
         statistics.id = 'life-statistics';
 
-        // initalize controls
+        // initialize controls
         let controls = document.createElement('div');
         controls.id = 'life-controls';
 
