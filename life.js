@@ -4,9 +4,9 @@
 function main() {
     let lifeInterface = new LifeInterface();
 
-    window.onresize = () => {
-        lifeInterface.drawGrid();
-    };
+    if ('ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0)
+        lifeInterface.drawPhoneMessage();
+    else window.onresize = () => lifeInterface.drawGrid();
 }
 
 class LifeInterface {
@@ -27,9 +27,8 @@ class LifeInterface {
                     this.model.setPoints(workerMessage.nextState, true);
                     this.drawGrid();
                 }
-                else if (workerMessage.debug) {
+                else if (workerMessage.debug)
                     console.log(workerMessage); // for debugging
-                }
             }
         });
 
@@ -215,6 +214,14 @@ class LifeInterface {
 
         this.grid.innerHTML = '';
         this.grid.appendChild(gridBody);
+    }
+
+    drawPhoneMessage() {
+        let newElement = document.createElement('span')
+        newElement.id = 'phone-message';
+        newElement.textContent = 'Sorry, but this game wasn\'t designed for small screens.';
+
+        this.element = newElement;
     }
 }
 
